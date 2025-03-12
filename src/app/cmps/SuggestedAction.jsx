@@ -1,12 +1,15 @@
+// src/app/cmps/SuggestedAction.js
 export default function SuggestedAction({ action, onClick, disabled }) {
   return (
     <button
       onClick={() => onClick(action.action)}
-      className="bg-gray-800 hover:bg-gray-700 text-left transition-colors px-3 py-2 rounded-lg border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      className={`p-2 bg-sports-dark-gray text-white rounded-lg hover:bg-sports-green transition ${
+        disabled ? "opacity-50 cursor-not-allowed" : ""
+      }`}
       disabled={disabled}
     >
-      <span className="text-blue-400 font-medium">{action.title}</span>
-      <span className="text-gray-300"> {action.label}</span>
+      <span className="font-bold text-sports-blue">{action.title}</span>{" "}
+      {action.label}
     </button>
   );
 }

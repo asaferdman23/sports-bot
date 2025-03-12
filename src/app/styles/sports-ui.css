@@ -1,0 +1,78 @@
+/* src/app/styles/sports-ui.css */
+.sports-container {
+    background: linear-gradient(135deg, #1a1a1a, #0d0d0d);
+  }
+  
+  .sports-header {
+    color: #fff;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+  }
+  
+  .sports-chat {
+    background-color: #1e1e1e;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    animation: fadeIn 0.5s ease-in;
+  }
+  
+  .sports-chat div {
+    animation: slideIn 0.3s ease-out;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  
+  @keyframes slideIn {
+    from {
+      transform: translateY(10px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  
+  /* Sports Color Palette */
+  :root {
+    --sports-dark: #1a1a1a;
+    --sports-gray: #1e1e1e;
+    --sports-dark-gray: #2a2a2a;
+    --sports-green: #2e7d32;
+    --sports-blue: #1976d2;
+    --sports-blue-dark: #1565c0;
+    --sports-red: #d32f2f;
+  }
+  
+  .bg-sports-dark {
+    background-color: var(--sports-dark);
+  }
+  
+  .bg-sports-gray {
+    background-color: var(--sports-gray);
+  }
+  
+  .bg-sports-dark-gray {
+    background-color: var(--sports-dark-gray);
+  }
+  
+  .border-sports-green {
+    border-color: var(--sports-green);
+  }
+  
+  .text-sports-blue {
+    color: var(--sports-blue);
+  }
+  
+  .bg-sports-blue {
+    background-color: var(--sports-blue);
+  }
+  
+  .bg-sports-blue-dark {
+    background-color: var(--sports-blue-dark);
+  }
