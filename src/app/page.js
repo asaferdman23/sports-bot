@@ -1,103 +1,183 @@
-import Image from "next/image";
+// app/page.js
+"use client";
+
+import { useState } from "react";
+import "./styles/animations.css";
+import ChatMessage from "./cmps/ChatMessege";
+import SuggestedAction from "./cmps/SuggestedAction";
+import LoadingIndicator from "./cmps/LoadingIndicatior";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.js
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [input, setInput] = useState("");
+  const [messages, setMessages] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  // Suggested actions for sports-related queries
+  const suggestedActions = [
+    { title: "Give me", label: "a workout plan", action: "Give me a workout plan for beginners" },
+    { title: "Show me", label: "some stretching exercises", action: "Show me some stretching exercises" },
+    { title: "What are", label: "benefits of running?", action: "What are the benefits of running?" },
+    { title: "Motivate me", label: "to exercise today", action: "I need motivation to exercise today" },
+  ];
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!input.trim()) return;
+
+    // Add user message
+    // Add user message
+    setMessages((prev) => [
+      ...prev,
+      <ChatMessage key={prev.length} content={input} role="user" />,
+    ]);
+    
+    setIsLoading(true);
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ input: input }),
+      });
+
+      if (!response.ok) throw new Error("Network response was not ok");
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let accumulatedContent = "";
+
+      // Add a loading message
+      setMessages((prev) => [
+        ...prev,
+        <ChatMessage
+          key={prev.length}
+          content={<LoadingIndicator />}
+          role="assistant"
+        />,
+      ]);
+
+      // Stream the response
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          // Final update with complete content
+          setMessages((prev) => [
+            ...prev.slice(0, -1), // Remove loading message
+            <ChatMessage
+              key={prev.length}
+              content={accumulatedContent}
+              role="assistant"
+            />,
+          ]);
+          break;
+        }
+
+        // Decode and accumulate the streamed content
+        accumulatedContent += decoder.decode(value, { stream: true });
+        // Update UI progressively, replacing the loading message
+        setMessages((prev) => [
+          ...prev.slice(0, -1), // Remove previous assistant message
+          <ChatMessage
+            key={prev.length}
+            content={accumulatedContent}
+            role="assistant"
+          />,
+        ]);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      setMessages((prev) => [
+        ...prev,
+        <ChatMessage
+          key={prev.length}
+          content="Error: Couldn’t process that."
+          role="assistant"
+          error
+        />,
+      ]);
+    } finally {
+      setIsLoading(false);
+      // if (!actionInput) setInput(""); // Only clear input if not from suggested action
+    }
+  };
+
+  // Handle clicking a suggested action
+  const handleSuggestedAction = (action) => {
+    handleSubmit({ preventDefault: () => {} }, action); // Simulate form submit
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white flex flex-col items-center justify-center p-6">
+      <div className="w-full max-w-4xl">
+        {/* Header */}
+        <h1 className="text-4xl font-extrabold tracking-tight mb-2">
+          Sports Assistant <span className="text-blue-400">ASE</span>
+        </h1>
+        <p className="text-gray-400 mb-8">
+          Your AI companion for sports insights—powered by Mistral.
+        </p>
+
+        {/* Output Area */}
+        <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6 mb-6 min-h-[300px] max-h-[500px] overflow-y-auto">
+          {messages.length === 0 ? (
+            <p className="text-gray-500 italic text-center">
+              Ask me about sports, fitness, or exercise!
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {messages.map((message, index) => (
+                <ChatMessage key={index} message={message} />
+              ))}
+              {isLoading && <LoadingIndicator />}
+            </div>
+          )}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
+
+        {/* Suggested Actions */}
+        <div className="mb-6">
+          <h3 className="text-sm font-medium text-gray-400 mb-3">Try asking about:</h3>
+          <div className="flex flex-wrap gap-2">
+            {suggestedActions.map((action, index) => (
+              <SuggestedAction 
+                key={index} 
+                action={action} 
+                onClick={handleSuggestedAction} 
+                disabled={isLoading} 
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="flex gap-3">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Ask about sports, fitness, or exercise..."
+            className="flex-1 p-4 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+            disabled={isLoading}
           />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          <button
+            type="submit"
+            className={`px-6 py-4 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-all ${
+              isLoading ? "opacity-50 cursor-not-allowed" : ""
+            }`}
+            disabled={isLoading || !input.trim()}
+          >
+            {isLoading ? "..." : "Ask"}
+          </button>
+        </form>
+
+        {/* Footer */}
+        <footer className="mt-8 text-gray-500 text-sm">
+          Built with Mistral AI & Next.js
+        </footer>
+      </div>
+
+      {/* Subtle Sci-Fi Effect */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,rgba(0,191,255,0.1),transparent_50%)] opacity-20" />
+      </div>
     </div>
   );
 }
